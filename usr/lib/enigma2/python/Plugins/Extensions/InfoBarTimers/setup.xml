@@ -1,0 +1,27 @@
+<setupxml>
+	<setup key="InfoBarTimers" title="InfoBarTimers Setup">
+		<item level="0" text="Enable integration with InfoBar" description="Enable this option to activate the InfoBar Timers screen.">config.plugins.InfoBarTimers.enabled</item>
+		<item level="0" text="Enable integration with MoviePlayer InfoBar" description="Enable this option to activate the InfoBar Timers screen in MoviePlayer.">config.plugins.InfoBarTimers.moviePlayer</item>
+		<item level="0" text="Add Show to extension menu" description="Set to 'Yes' to add the 'Show Timers' option to the Extension menu.">config.plugins.InfoBarTimers.extensionsShow</item>
+		<item level="0" text="Add Setup to extension menu" description="Set to 'Yes' to add the 'InfoBarTimers Setup' option to the Extension menu.">config.plugins.InfoBarTimers.extensionsSetup</item>
+		<item level="0" text="Time display format" description="Select the format for duration, elapsed and remaining time displays. Not all skins used the user configurable time displays.">config.plugins.InfoBarTimers.format</item>
+		<item level="0" text="Signal display label" description="Select the type of label to be displayed in front of the signal values.">config.plugins.InfoBarTimers.signalIndex</item>
+		<item level="0" text="Signal display separator" description="Select the type of separator to be displayed between the signal display label and the signal values." requires="config.plugins.InfoBarTimers.signalIndex">config.plugins.InfoBarTimers.separatorIndex</item>
+		<item level="1" text="InfoBar position" description="Set the left, top position (in pixels) of the InfoBar Timers overlay.">config.plugins.InfoBarTimers.position</item>
+		<item level="1" text="InfoBar style" description="Select from the available style choices offered by the current skin. Not all skins will have alternative styles.">config.plugins.InfoBarTimers.style</item>
+		<item level="1" text="InfoBar number of entries" description="Set the maximum number of entries in the InfoBar Timers overlay. The number of entries displayed may be reduced if there is insufficient screen space.">config.plugins.InfoBarTimers.entries</item>
+		<item level="0" text="Timer entry display order (InfoBar)" description="Select the display order of the various timer entries (Waiting / Active / Done) in the InfoBar.">config.plugins.InfoBarTimers.orderOverlay</item>
+		<item level="0" text="Timer start time sort order (InfoBar)" description="Select the sort order for the start time of the various timer entries in the InfoBar.">config.plugins.InfoBarTimers.sortOverlay</item>
+		<item level="0" text="Done timers in InfoBar list" description="Select the maximum number of completed timers to be listed in the InfoBar.">config.plugins.InfoBarTimers.endedOverlay</item>
+		<item level="0" text="Waiting timers in InfoBar list" description="Select the maximum number of upcoming timers to be listed in the InfoBar.">config.plugins.InfoBarTimers.waitingOverlay</item>
+		<item level="0" text="Disabled timers in InfoBar list" description="Select the maximum number of disabled timers to be listed in the InfoBar.">config.plugins.InfoBarTimers.disabledOverlay</item>
+		<item level="2" text="InfoBar refresh timer" description="Select how frequently the InfoBar Timers overlay updates its list. The refresh timer ranges from 0 to 60 seconds.  A value of 0 disables the timer.  Refreshing is only appropriate if the InfoBar stays visible for extended periods of time.">config.plugins.InfoBarTimers.refreshOverlay</item>
+		<item level="0" text="Timer entry display order (Show)" description="Select the display order of the various timer entries (Waiting / Active / Done) in the Show screen.">config.plugins.InfoBarTimers.orderShow</item>
+		<item level="0" text="Timer start time sort order (Show)" description="Select the sort order for the start time of the various timer entries in the Show screen.">config.plugins.InfoBarTimers.sortShow</item>
+		<item level="0" text="Done timers in Show list" description="Select the maximum number of completed timers to be listed in the Show screen.  A value of -1 means to display ALL available entries.">config.plugins.InfoBarTimers.endedShow</item>
+		<item level="0" text="Waiting timers in Show list" description="Select the maximum number of upcoming timers to be listed in the Show screen.  A value of -1 means to display ALL available entries.">config.plugins.InfoBarTimers.waitingShow</item>
+		<item level="0" text="Disabled timers in Show list" description="Select the maximum number of disabled timers to be listed in the Show screen.">config.plugins.InfoBarTimers.disabledShow</item>
+		<item level="2" text="Show refresh timer" description="Select how frequently the 'Show Timers' screen updates its list. The refresh delay ranges from 0 to 60 seconds.  A value of 0 disables the refresh." requires="config.plugins.InfoBarTimers.extensionsShow">config.plugins.InfoBarTimers.refreshShow</item>
+		<item level="0" text="Use InfoBar timer list in Show" description="Select 'Yes' to display the same timer list in the Show screen as used in the Overlay InfoBar. Selecting 'No' will display all available timers in the Show screen.">config.plugins.InfoBarTimers.showOverlayList</item>
+	</setup>
+</setupxml>
