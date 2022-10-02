@@ -1,31 +1,43 @@
-##############################################################################
+# ===========================================================================
 #
-# 	InfoBarTimers Plugin for Enigma-2
-# 	Coded by IanSav (c) 2018-2019  <IS.OzPVR(at)gmail.com>
-#	Assistance, improvements and optimisations provided by Prl.
+# InfoBarTimers Plugin for Enigma-2
 #
-# 	Based on ideas from InfoBarTunerState Plugin
-# 	Coded by betonme (c) 2011  <glaserfrank(at)gmail.com>
+# Coding by IanSav (c) 2018-2022
+# Version Date - 1-Oct-2022
+# Repository - https://github.com/IanSav/InfoBarTimers/
 #
-# 	This program is free software; you can redistribute it and/or modify
-# 	it under the terms of the GNU General Public License as published by
-# 	the Free Software Foundation; either version 2 of the License, or
-# 	(at your option) any later version.
+# Assistance, improvements and optimizations provided by Prl.
 #
-# 	This program is distributed in the hope that it will be useful, but
-# 	WITHOUT ANY WARRANTY; without even the implied warranty of
-# 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# 	General Public License for more details.
+# Based on ideas from InfoBarTunerState Plugin
+# Coded by betonme (c) 2011  <glaserfrank(at)gmail.com>
 #
-##############################################################################
+# This plugin is NOT free software, it is open source.  You are allowed to
+# use and modify it so long as you attribute and acknowledge the source and
+# original author.  That is, the license and original author details must be
+# retained at all times.
+#
+# This plugin was developed and enhanced as open source software it may not
+# be commercially distributed or included in any commercial software or used
+# for commercial benefit.
+#
+# If you wish to contribute fixes or enhancements to the skin or plugin then
+# please drop me a line at IS.OzPVR (at) gmail.com.  If you wish to use this
+# skin or plugin as part of a commercial product please contact me.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# ===========================================================================
 
 from operator import attrgetter
-
-from enigma import ePoint, eSize, eTimer, getDesktop
 from time import localtime, strftime, time
 
+from enigma import ePoint, eSize, eTimer, getDesktop
+
 from Components.ActionMap import HelpableActionMap
-from Components.config import ConfigEnableDisable, ConfigInteger, ConfigSelection, ConfigSelectionNumber, ConfigSequence, ConfigSubsection, ConfigYesNo, config
+from Components.config import ConfigEnableDisable, ConfigInteger, ConfigSelection, ConfigSequence, ConfigSubsection, ConfigYesNo, config
 from Components.Pixmap import MultiPixmap
 from Components.PluginComponent import plugins
 from Components.Renderer.Picon import getPiconName
@@ -42,9 +54,11 @@ NAME = _("InfoBarTimers")
 SHOW = _("Show Timers")
 SETUP = _("InfoBarTimers Setup")
 DESCRIPTION = _("InfoBar display of recent, current and pending timers")
-VERSION = "0.3.1"
+VERSION = "1.0"
 
-InfoBarShowHide__init__ = None
+DEF_ITEMHEIGHT = 25
+DEF_ENTRIES = 10
+MIN_ENTRIES = 1
 
 # Icon images are derived from a skin based MultiPixmap rather than hard coding them.
 #
@@ -58,12 +72,7 @@ ICON_END = 6
 ICON_AUTO = 7
 ICON_REP = 8
 
-desktopWidth = getDesktop(0).size().width()
-desktopHeight = getDesktop(0).size().height()
-
-DEF_ITEMHEIGHT = 25
-DEF_ENTRIES = 10
-MIN_ENTRIES = 1
+DESKTOP_SIZE = (getDesktop(0).size().width(), getDesktop(0).size().height())
 
 orderChoices = [
 	("adew", _("Active / Disabled / Ended / Waiting")),
@@ -93,38 +102,39 @@ orderChoices = [
 ]
 
 sortChoices = [
-	("0", _("Ascending")),
-	("1", _("Descending"))
+	(0, _("Ascending")),
+	(1, _("Descending"))
 ]
 
 formatChoices = [
-	("0", _("Mins/Secs display")),
-	("1", _("H:MM:SS display")),
-	("2", _("M:SS display")),
-	("3", _("H:MM display"))
+	(0, _("Mins/Secs display")),
+	(1, _("H:MM:SS display")),
+	(2, _("M:SS display")),
+	(3, _("H:MM display"))
 ]
 
 signalChoices = [
-	("0", _("None")),
-	("1", _("Short (S/Q)")),
-	("2", _("Short (P/Q)")),
-	("3", _("Long (AGC/SNR)"))
+	(0, _("None")),
+	(1, _("Short (S/Q)")),
+	(2, _("Short (P/Q)")),
+	(3, _("Long (AGC/SNR)"))
 ]
 
 separatorChoices = [
-	("0", _("None")),
-	("1", _("Space")),
-	("2", _("Colon ':'")),
-	("3", _("Equals '='")),
-	("4", _("Hyphen '-'")),
-	("5", _("Colon with space ': '")),
-	("6", _("Equals with spaces ' = '")),
-	("7", _("Hyphen with spaces ' - '"))
+	(0, _("None")),
+	(1, _("Space")),
+	(2, _("Colon ':'")),
+	(3, _("Equals '='")),
+	(4, _("Hyphen '-'")),
+	(5, _("Colon with space ': '")),
+	(6, _("Equals with spaces ' = '")),
+	(7, _("Hyphen with spaces ' - '"))
 ]
 
 overlayPositions = {
 	720: [50, 140],
-	1080: [75, 210]
+	1080: [75, 210],
+	2160: [112, 315]
 }
 
 styleChoices = [
@@ -139,22 +149,22 @@ config.plugins.InfoBarTimers.extensionsSetup = ConfigYesNo(default=False)
 default = "wade" if config.usage.timerlist_finished_timer_position.value == "end" else "edaw"
 config.plugins.InfoBarTimers.orderOverlay = ConfigSelection(default=default, choices=orderChoices)
 config.plugins.InfoBarTimers.orderShow = ConfigSelection(default=default, choices=orderChoices)
-config.plugins.InfoBarTimers.sortOverlay = ConfigSelection(default="0", choices=sortChoices)
-config.plugins.InfoBarTimers.sortShow = ConfigSelection(default="0", choices=sortChoices)
-config.plugins.InfoBarTimers.endedOverlay = ConfigSelectionNumber(default=3, min=0, max=10, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.endedShow = ConfigSelectionNumber(default=10, min=-1, max=100, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.waitingOverlay = ConfigSelectionNumber(default=3, min=0, max=10, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.waitingShow = ConfigSelectionNumber(default=10, min=-1, max=100, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.disabledOverlay = ConfigSelectionNumber(default=3, min=0, max=10, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.disabledShow = ConfigSelectionNumber(default=10, min=-1, max=100, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.format = ConfigSelection(default="0", choices=formatChoices)
-config.plugins.InfoBarTimers.signalIndex = ConfigSelection(default="1", choices=signalChoices)
-config.plugins.InfoBarTimers.separatorIndex  = ConfigSelection(default="1", choices=separatorChoices)
-config.plugins.InfoBarTimers.position = ConfigSequence(default=overlayPositions.get(desktopHeight, [50, 140]), seperator=",", limits=[(0, desktopWidth), (0, desktopHeight)])
+config.plugins.InfoBarTimers.sortOverlay = ConfigSelection(default=0, choices=sortChoices)
+config.plugins.InfoBarTimers.sortShow = ConfigSelection(default=0, choices=sortChoices)
+config.plugins.InfoBarTimers.endedOverlay = ConfigSelection(default=3, choices=[(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(11)])
+config.plugins.InfoBarTimers.endedShow = ConfigSelection(default=10, choices=[(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(-1, 101)])
+config.plugins.InfoBarTimers.waitingOverlay = ConfigSelection(default=3, choices=[(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(11)])
+config.plugins.InfoBarTimers.waitingShow = ConfigSelection(default=10, choices=[(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(-1, 101)])
+config.plugins.InfoBarTimers.disabledOverlay = ConfigSelection(default=3, choices=[(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(11)])
+config.plugins.InfoBarTimers.disabledShow = ConfigSelection(default=10, choices=[(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(-1, 101)])
+config.plugins.InfoBarTimers.format = ConfigSelection(default=0, choices=formatChoices)
+config.plugins.InfoBarTimers.signalIndex = ConfigSelection(default=1, choices=signalChoices)
+config.plugins.InfoBarTimers.separatorIndex  = ConfigSelection(default=1, choices=separatorChoices)
+config.plugins.InfoBarTimers.position = ConfigSequence(default=overlayPositions.get(DESKTOP_SIZE[1], [50, 140]), seperator=",", limits=[(0, DESKTOP_SIZE[0]), (0, DESKTOP_SIZE[1])])
 config.plugins.InfoBarTimers.style = ConfigSelection(default="default", choices=styleChoices)
-config.plugins.InfoBarTimers.entries = ConfigSelectionNumber(default=DEF_ENTRIES, min=MIN_ENTRIES, max=DEF_ENTRIES, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.refreshOverlay = ConfigSelectionNumber(default=0, min=0, max=60, stepwidth=1, wraparound=True)
-config.plugins.InfoBarTimers.refreshShow = ConfigSelectionNumber(default=10, min=0, max=60, stepwidth=1, wraparound=True)
+config.plugins.InfoBarTimers.entries = ConfigSelection(default=DEF_ENTRIES, choices=[(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(MIN_ENTRIES, DEF_ENTRIES + 1)])
+config.plugins.InfoBarTimers.refreshOverlay = ConfigSelection(default=0, choices=[(0, _("Disabled"))] + [(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(1, 61)])
+config.plugins.InfoBarTimers.refreshShow = ConfigSelection(default=10, choices=[(0, _("Disabled"))] + [(x, ngettext("%d Second", "%d Seconds", x) % x) for x in range(1, 61)])
 config.plugins.InfoBarTimers.showOverlayList = ConfigYesNo(default=False)
 
 
@@ -163,26 +173,24 @@ class InfoBarTimersSetup(Setup):
 		Setup.__init__(self, session=session, setup="InfoBarTimers", plugin="Extensions/InfoBarTimers")
 		config.plugins.InfoBarTimers.style.addNotifier(self.updateLayout, initial_call=False, immediate_feedback=True)
 		self.updateLayout(None)
-		# if self.cleanUp not in self.onClose:
 		self.onClose.append(self.cleanUp)
 
 	def updateLayout(self, configElement):
-		entries, defEntries, minEntries, maxEntries = InfoBarTimersOverlay.overlay.getEntries()
-		config.plugins.InfoBarTimers.entries.setChoices([str(x) for x in range(minEntries, maxEntries + 1)], default=str(defEntries))
+		entries, defEntries, minEntries, maxEntries = InfoBarTimersOverlay.instance.getEntries()
+		config.plugins.InfoBarTimers.entries.setChoices([(x, ngettext("%d Entry", "%d Entries", x) % x) for x in range(minEntries, maxEntries + 1)], default=str(defEntries))
 		# Remove next 2 lines after testing...
-		# itemHeight = InfoBarTimersOverlay.overlay.getItemHeight(config.plugins.InfoBarTimers.style.value)
+		# itemHeight = InfoBarTimersOverlay.instance.getItemHeight(config.plugins.InfoBarTimers.style.value)
 		# print("[InfoBarTimers-Setup] updateLayout DEBUG: style='%s', itemHeight=%d, entries=%d, defEntries=%d, minEntries=%d, maxEntries=%d" % (config.plugins.InfoBarTimers.style.value, itemHeight, entries, defEntries, minEntries, maxEntries))
 
 	def keySave(self):
 		self.saveAll()
-		# Update extension menu integration.
-		if config.plugins.InfoBarTimers.extensionsShow.value:
+		if config.plugins.InfoBarTimers.extensionsShow.value:  # Update extension menu integration.
 			if pluginShow not in plugins.pluginList:
 				plugins.addPlugin(pluginShow)
 		else:
 			if pluginShow in plugins.pluginList:
 				plugins.removePlugin(pluginShow)
-		if config.plugins.InfoBarTimers.extensionsSetup.value:
+		if config.plugins.InfoBarTimers.extensionsSetup.value:  # Update extension menu integration.
 			if pluginSetup not in plugins.pluginList:
 				plugins.addPlugin(pluginSetup)
 		else:
@@ -192,264 +200,13 @@ class InfoBarTimersSetup(Setup):
 
 	def cleanUp(self):
 		config.plugins.InfoBarTimers.style.removeNotifier(self.updateLayout)
-		# if self.cleanUp in self.onClose:
 		self.onClose.remove(self.cleanUp)
 
 
-# If ended or waiting is None then use the config values for the number of timer entries.
-# If ended or waiting is -1 then use all available timer entries of this type.
-# If ended or waiting is 0 then don't use this type of timer entry.
-# If ended or waiting is > 0 then use up to this number of this type of timer entry.
-#
-def updateTimerList(recordTimer, ended, waiting, disabled, order, reverse):
-	timersDisabled = []
-	timersEnded = []
-	for item in reversed(recordTimer.processed_timers):
-		if item.disabled:
-			if disabled:
-				timersDisabled.append(item)
-				disabled -= 1
-		else:
-			if ended:
-				timersEnded.append(item)
-				ended -= 1
-	timersActive = []
-	timersWaiting = []
-	for item in recordTimer.timer_list:
-		if item.state == item.StateWaiting:
-			if waiting:
-				timersWaiting.append(item)
-				waiting -= 1
-		else:
-			timersActive.append(item)
-	reverse = True if reverse == "1" else False
-	timers = []
-	for item in order:
-		if item == "a":
-			timersActive.sort(key=attrgetter("begin"), reverse=reverse)
-			timers.extend(timersActive)
-		elif item == "d":
-			timersDisabled.sort(key=attrgetter("begin"), reverse=reverse)
-			timers.extend(timersDisabled)
-		elif item == "e":
-			timersEnded.sort(key=attrgetter("begin"), reverse=reverse)
-			timers.extend(timersEnded)
-		elif item == "w":
-			timersWaiting.sort(key=attrgetter("begin"), reverse=reverse)
-			timers.extend(timersWaiting)
-	return timers
-
-
-def formatTimerList(timers, icons):
-	snrLabels = ["", _("Q"), _("Q"), _("SNR")]
-	powerLabels = ["", _("S"), _("P"), _("AGC")]
-	labelSeparators = ["", " ", ":", "=", "-", ": ", " = ", " - "]
-	signal = int(config.plugins.InfoBarTimers.signalIndex.value)
-	if signal:
-		separator = labelSeparators[int(config.plugins.InfoBarTimers.separatorIndex.value)]
-	else:
-		separator = ""
-	list = []
-	for item in timers:
-		if item.state == item.StateWaiting:
-			state = icons.pixmaps[ICON_WAIT]
-			stateText = _("Waiting")
-		elif item.state == item.StatePrepared:
-			state = icons.pixmaps[ICON_PREP]
-			stateText = _("Preparing")
-		elif item.state == item.StateRunning:
-			state = icons.pixmaps[ICON_REC]
-			stateText = _("Recording")
-		elif item.state == item.StateFailed:
-			state = icons.pixmaps[ICON_FAIL]
-			stateText = _("Failed")
-		elif item.state == item.StateEnded:
-			state = icons.pixmaps[ICON_END]
-			stateText = _("Ended")
-		else:
-			state = None
-			stateText = _("Unknown")
-		if item.disabled:
-			state = icons.pixmaps[ICON_OFF]
-			stateText = _("Disabled")
-		if hasattr(item, "isAutoTimer") and item.isAutoTimer:
-			type = icons.pixmaps[ICON_AUTO]
-			typeText = _("AutoTimer")
-		elif hasattr(item, "ice_timer_id") and item.ice_timer_id:
-			type = LoadPixmap(resolveFilename(SCOPE_CURRENT_SKIN, "icons/timer_icetv.png"))
-			if not type:
-				type = LoadPixmap(resolveFilename(SCOPE_CURRENT_PLUGIN, "SystemPlugins/IceTV/icons/timer_icetv.png"))
-			typeText = _("IceTV")
-		elif item.repeated:
-			type = icons.pixmaps[ICON_REP]
-			typeText = _("Repeating")
-		else:
-			type = None
-			typeText = _("Timer")
-		feinfo = item.record_service and item.record_service.frontendInfo()
-		data = feinfo and feinfo.getAll(False)
-		if data:
-			tuner = data.get("tuner_number", -1)
-			tuner = chr(int(tuner) + ord("A")) if tuner is not None and tuner > -1 else None
-			tunerType = data.get("tuner_type", None)
-			ber = data.get("tuner_bit_error_rate", None)
-			snrValue = data.get("tuner_signal_quality", None)
-			if snrValue is not None:
-				snrValue = int(snrValue * 100 / 65535)
-				snr = "%s%s%d%%" % (snrLabels[signal], separator, snrValue)
-			else:
-				snrValue = -1  # Use an out-out-of range value to hide the bar graph.
-				snr = None
-			snr_dB = data.get("tuner_signal_quality_db", None)
-			if snr_dB is not None:
-				snr_dB = "%.1f" % (snr_dB / 100.0)
-			powerValue = data.get("tuner_signal_power", None)
-			if powerValue is not None:
-				powerValue = int(powerValue * 100 / 65535)
-				power = "%s%s%d%%" % (powerLabels[signal], separator, powerValue)
-			else:
-				powerValue = -1  # Use an out-out-of range value to hide the bar graph.
-				power = None
-		else:
-			tuner = None
-			tunerType = None
-			ber = None
-			snrValue = -1  # Use an out-out-of range value to hide the bar graph.
-			snr = None
-			snr_dB = None
-			powerValue = -1  # Use an out-out-of range value to hide the bar graph.
-			power = None
-		picon = getPiconName(item.service_ref.ref.toString())
-		if picon == "":
-			servicePicon = None
-		else:
-			servicePicon = LoadPixmap(picon)
-		serviceName = item.service_ref.getServiceName() if item.service_ref else None
-		timerName = item.name if item.name else None
-		prepare = "%d Secs" % item.prepare_time if item.prepare_time < 60 else "%d Mins" % (item.prepare_time / 60)
-		if item.begin and item.end:
-			dateFmt = config.usage.date.dayshort.value  # Set the display date format
-			timeFmt = config.usage.time.short.value  # Set the display time format
-			begin = strftime(dateFmt + " " + timeFmt, localtime(item.begin))
-			beginDate = strftime(dateFmt, localtime(item.begin))
-			beginTime = strftime(timeFmt, localtime(item.begin))
-			end = strftime(dateFmt + " " + timeFmt, localtime(item.end))
-			endDate = strftime(dateFmt, localtime(item.end))
-			endTime = strftime(timeFmt, localtime(item.end))
-			beginEnd = begin + " - " + strftime(timeFmt, localtime(item.end))
-			durationValue = item.end - item.begin
-			duration = formatTimeValue(durationValue)
-			durationWord = "%d Secs" % durationValue if durationValue < 60 else "%d Mins" % int(durationValue / 60)
-			durationHrs = None if durationValue < 0 else "%d:%02d" % (durationValue / 3600, durationValue / 60 % 60)
-			durationMins = None if durationValue < 0 else "%d:%02d" % (durationValue / 60, durationValue % 60)
-			durationSecs = None if durationValue < 0 else "%d:%02d:%02d" % (durationValue / 3600, durationValue / 60 % 60, durationValue % 60)
-			now = time()
-			if item.begin <= now <= item.end:
-				if config.usage.elapsed_time_positive_osd.value:
-					signElapsed = "+"
-					signRemaining = "-"
-				else:
-					signElapsed = "-"
-					signRemaining = "+"
-				elapsedValue = now - item.begin
-				elapsed = formatTimeValue(elapsedValue)
-				elapsedWord = "%s%d Secs" % (signElapsed, elapsedValue) if elapsedValue < 60 else "%s%d Mins" % (signElapsed, int(elapsedValue / 60))
-				elapsedHrs = None if elapsedValue < 0 else "%s%d:%02d" % (signElapsed, elapsedValue / 3600, elapsedValue / 60 % 60)
-				elapsedMins = None if elapsedValue < 0 else "%s%d:%02d" % (signElapsed, elapsedValue / 60, elapsedValue % 60)
-				elapsedSecs = None if elapsedValue < 0 else "%s%d:%02d:%02d" % (signElapsed, elapsedValue / 3600, elapsedValue / 60 % 60, elapsedValue % 60)
-				remainingValue = item.end - now
-				remaining = formatTimeValue(remainingValue)
-				remainingWord = "%s%d Secs" % (signRemaining, remainingValue) if remainingValue < 60 else "%s%d Mins" % (signRemaining, int(remainingValue / 60))
-				remainingHrs = None if remainingValue < 0 else "%s%d:%02d" % (signRemaining, remainingValue / 3600, remainingValue / 60 % 60)
-				remainingMins = None if remainingValue < 0 else "%s%d:%02d" % (signRemaining, remainingValue / 60, remainingValue % 60)
-				remainingSecs = None if remainingValue < 0 else "%s%d:%02d:%02d" % (signRemaining, remainingValue / 3600, remainingValue / 60 % 60, remainingValue % 60)
-				format = config.usage.swap_time_remaining_on_osd.value
-				if format == "0":
-					elapsedRemaining = "%s%d Secs" % (signRemaining, remainingValue) if remainingValue < 60 else "%s%d Mins" % (signRemaining, int(remainingValue / 60))
-				elif format == "1":
-					elapsedRemaining = "%s%d Secs" % (signElapsed, elapsedValue) if elapsedValue < 60 else "%s%d Mins" % (signElapsed, int(elapsedValue / 60))
-				elif format == "2":
-					elapsedRemaining = "%s%d %s%d Mins" % (signElapsed, int(elapsedValue / 60), signRemaining, int(remainingValue / 60))
-				elif format == "3":
-					elapsedRemaining = "%s%d %s%d Mins" % (signRemaining, int(remainingValue / 60), signElapsed, int(elapsedValue / 60))
-				else:
-					print("[InfoBarTimers] Error: config.usage.swap_time_remaining_on_osd value is not within expected range!! (Value=%s)" % config.usage.swap_time_remaining_on_osd.value)
-					elapsedRemaining = None
-				progressValue = int(elapsedValue / durationValue * 100.0)
-				if progressValue < 0:
-					progressValue = 0
-				elif progressValue > 100:
-					progressValue = 100
-				progress = "%d%%" % progressValue
-			else:
-				elapsed = None
-				elapsedWord = None
-				elapsedHrs = None
-				elapsedMins = None
-				elapsedSecs = None
-				remaining = None
-				remainingWord = None
-				remainingHrs = None
-				remainingMins = None
-				remainingSecs = None
-				elapsedRemaining = None
-				progressValue = -1  # Use an out-out-of range value to hide the bar graph.
-				progress = None
-		else:
-			begin = None
-			beginDate = None
-			beginTime = None
-			end = None
-			endDate = None
-			endTime = None
-			beginEnd = None
-			duration = None
-			durationWord = None
-			durationHrs = None
-			durationMins = None
-			durationSecs = None
-			elapsed = None
-			elapsedWord = None
-			elapsedHrs = None
-			elapsedMins = None
-			elapsedSecs = None
-			remaining = None
-			remainingWord = None
-			remainingHrs = None
-			remainingMins = None
-			remainingSecs = None
-			elapsedRemaining = None
-			progressValue = -1  # Use an out-out-of range value to hide the bar graph
-			progress = None
-		tags = "'%s'" % "', '".join(item.tags) if item.tags else None
-		description = item.description if item.description else None
-		dirName = item.dirname if item.dirname else None  # Custom directory
-		list.append(
-			(state, stateText, type, typeText, tuner, tunerType, ber, snrValue, snr, snr_dB, powerValue, power,
-			servicePicon, serviceName, timerName, prepare, begin, beginDate, beginTime, end, endDate, endTime, beginEnd,
-			duration, durationWord, durationHrs, durationMins, durationSecs, elapsed, elapsedWord, elapsedHrs, elapsedMins, elapsedSecs,
-			remaining, remainingWord, remainingHrs, remainingMins, remainingSecs, elapsedRemaining, progressValue, progress,
-			tags, description, dirName)
-		)
-	return list
-
-
-def formatTimeValue(value):
-	if config.plugins.InfoBarTimers.format.value == "1":
-		format = None if value < 0 else "%d:%02d:%02d" % (value / 3600, value / 60 % 60, value % 60)
-	elif config.plugins.InfoBarTimers.format.value == "2":
-		format = None if value < 0 else "%d:%02d" % (value / 60, value % 60)
-	elif config.plugins.InfoBarTimers.format.value == "3":
-		format = None if value < 0 else "%d:%02d" % (value / 3600, value / 60 % 60)
-	else:
-		format = "%d Secs" % value if value < 60 else "%d Mins" % int(value / 60)
-	return format
-
-
 # Template fields:
-# 	 0 -> Image, taken from "Icons" list above, that represents the state of the timer (Waiting, Preparing, Running or Ended)
+# 	 0 -> Image, taken from "icons" list above, that represents the state of the timer (Waiting, Preparing, Running or Ended)
 # 	 1 -> Text message representation of field 0
-# 	 2 -> Image, taken from "Icons" list above, that represents the type of timer (AutoTimer, IceTV, Repeating)
+# 	 2 -> Image, taken from "icons" list above, that represents the type of timer (AutoTimer, IceTV, Repeating)
 # 	 3 -> Text message representation of field 2
 # 	 4 -> Tuner letter of tuner being used for a running timer (A, B, C, ...)
 # 	 5 -> Tuner type of tuner being used for a running timer (DVB-C, DVB-S, DVB-T, ...)
@@ -493,11 +250,11 @@ def formatTimeValue(value):
 # 	43 -> Directory name to be used for the timer if the default is NOT being used
 #
 class InfoBarTimersOverlay(Screen):
-	overlay = None
-	skinTemplate = """
-	<screen name="InfoBarTimersOverlay" title="InfoBar Timers" position="center,%d" size="%d,%d" flags="wfNoBorder" zPosition="+1">
-		<widget name="Icons" position="0,0" size="%d,%d" pixmaps="icons/timer_off.png,icons/timer_wait.png,icons/timer_prep.png,icons/timer_rec.png,icons/timer_zap.png,icons/timer_failed.png,icons/timer_done.png,icons/timer_autotimer.png,icons/timer_rep.png" alphatest="blend" />
-		<widget source="Timers" render="Listbox" position="center,center" size="%d,%d">
+	instance = None
+	skin = ["""
+	<screen name="InfoBarTimersOverlay" title="InfoBar Timers" position="center,140" size="1180,420" flags="wfNoBorder" resolution="1280,720" zPosition="+1">
+		<widget name="icons" position="0,0" size="20,20" pixmaps="icons/timer_off.png,icons/timer_wait.png,icons/timer_prep.png,icons/timer_rec.png,icons/timer_zap.png,icons/timer_failed.png,icons/timer_done.png,icons/timer_autotimer.png,icons/timer_rep.png" alphatest="blend" />
+		<widget source="timers" render="Listbox" position="center,center" size="1160,400">
 			<convert type="TemplatedMultiContent">
 				{
 				"templates":
@@ -566,16 +323,13 @@ class InfoBarTimersOverlay(Screen):
 						])
 					},
 				"fonts": [parseFont("Regular;%d"), parseFont("Regular;%d"), parseFont("Regular;%d"), parseFont("Regular;%d")],
+				"itemHeight": None,
 				"scrollbarMode": "showNever",
 				"selectionEnabled": False
 				}
 			</convert>
 		</widget>
-	</screen>"""
-	scaleData = [
-		140, 1180, 420,
-		20, 20,
-		1160, 400,
+	</screen>""",
 		25,
 		2, 20, 20,
 		25, 2, 20, 20,
@@ -632,93 +386,52 @@ class InfoBarTimersOverlay(Screen):
 		1060, 23, 100, 17,
 		20, 15, 17, 13
 	]
-	skin = None
 
 	def __init__(self, session):
 		Screen.__init__(self, session)
-		minRes = 720
-		height = max(minRes, desktopHeight)
-		InfoBarTimersOverlay.skin = InfoBarTimersOverlay.skinTemplate % tuple([x * height / minRes for x in InfoBarTimersOverlay.scaleData])
-		# print("[InfoBarTimers] DEBUG: Height=%d\n%s" % (height, InfoBarTimersOverlay.skin))
-		self["Icons"] = MultiPixmap()
-		self["Icons"].hide()
-		self["Timers"] = List()
+		if not self.getTitle():
+			self.setTitle(_("InfoBar Timers"))
+		self["icons"] = MultiPixmap()
+		self["icons"].hide()
+		self["timers"] = List()
 		self.overlayWidth = 0
 		self.timersWidth = 0
 		self.timersHeight = 0
 		self.heightPadding = 0
 		self.displayed = False
+		self.onLayoutFinish.append(self.layoutFinish)
 		self.refreshTimer = eTimer()
 		self.refreshTimer.callback.append(self.refreshTimerList)
-		if self.layoutFinish not in self.onLayoutFinish:
-			self.onLayoutFinish.append(self.layoutFinish)
-		if self.refreshTimerList not in self.session.nav.RecordTimer.on_state_change:
-			self.session.nav.RecordTimer.on_state_change.append(self.refreshTimerList)
-		if self.cleanUp not in self.onClose:
-			self.onClose.append(self.cleanUp)
-		InfoBarTimersOverlay.overlay = self
+		self.session.nav.RecordTimer.on_state_change.append(self.refreshTimerList)
+		self.onClose.append(self.cleanUp)
+		InfoBarTimersOverlay.instance = self
 
 	def layoutFinish(self):
-		if not self.getTitle():
-			self.setTitle(_("InfoBar Timers"))
 		self.overlayWidth = self.instance.size().width()
-		self.timersWidth = self["Timers"].downstream_elements[0].downstream_elements[0].instance.size().width()
-		self.timersHeight = self["Timers"].downstream_elements[0].downstream_elements[0].instance.size().height()
-		yOffset = self["Timers"].downstream_elements[0].downstream_elements[0].instance.position().y()
+		self.timersWidth = self["timers"].downstream_elements[0].downstream_elements[0].instance.size().width()
+		self.timersHeight = self["timers"].downstream_elements[0].downstream_elements[0].instance.size().height()
+		print("[InfoBarTimers] DEBUG: timersWidth=%d, timersHeight=%d." % (self.timersWidth, self.timersHeight))
+		yOffset = self["timers"].downstream_elements[0].downstream_elements[0].instance.position().y()
 		yPadding = self.instance.size().height() - self.timersHeight - yOffset
 		self.heightPadding = yOffset + yPadding
 		styles = None
-		if "templates" in self["Timers"].downstream_elements[0].template:
-			styles = sorted(self["Timers"].downstream_elements[0].template["templates"].keys())
+		if "templates" in self["timers"].downstream_elements[0].template:
+			styles = sorted(self["timers"].downstream_elements[0].template["templates"].keys())
 			if styles:
-				config.plugins.InfoBarTimers.style.setChoices([(item, "%s%s" % (item[:1].upper(), item[1:])) for item in styles], default="default")
+				config.plugins.InfoBarTimers.style.setChoices([(x, "%s%s" % (x[:1].upper(), x[1:])) for x in styles], default="default")
 		config.plugins.InfoBarTimers.style.value = config.plugins.InfoBarTimers.style.saved_value
-		self["Timers"].downstream_elements[0].downstream_elements[0].instance.setSelectionEnable(0)
+		self["timers"].downstream_elements[0].downstream_elements[0].instance.setSelectionEnable(0)
 		# Remove next line after testing...
-		# print("[InfoBarTimers-Overlay] layoutFinish DEBUG: Screen style='%s', styles='%s', overlayWidth=%d, timersWidth=%d, timersHeight=%d, yOffset=%d, yPadding=%d" % (config.plugins.InfoBarTimers.style.value, str(styles), self.overlayWidth, self.timersWidth, self.timersHeight, yOffset, yPadding))
-
-	def getActiveStyle(self):
-		savedStyle = config.plugins.InfoBarTimers.style.value
-		if savedStyle:
-			self["Timers"].setStyle(savedStyle)
-		style = self["Timers"].getStyle()
-		return style
-
-	def getItemHeight(self, style):
-		if "templates" in self["Timers"].downstream_elements[0].template:
-			itemHeight = self["Timers"].downstream_elements[0].template["templates"].get(style, None)[0]
-		else:
-			itemHeight = self["Timers"].downstream_elements[0].template.get("itemHeight", None)
-		if itemHeight is None or type(itemHeight) is not int:
-			itemHeight = DEF_ITEMHEIGHT
-			print("[InfoBarTimers] Error: No itemHeight found!  Assuming a default of %d." % itemHeight)
-		return itemHeight
-
-	def getEntries(self):
-		entries = int(config.plugins.InfoBarTimers.entries.value)
-		maxEntries = int(self.timersHeight / self.getItemHeight(self.getActiveStyle()))
-		if entries > maxEntries:
-			config.plugins.InfoBarTimers.entries.value = str(maxEntries)
-			config.plugins.InfoBarTimers.entries.save()
-			entries = maxEntries
-		defEntries = DEF_ENTRIES
-		if defEntries > entries:
-			defEntries = entries
-		minEntries = MIN_ENTRIES
-		if minEntries > entries:
-			minEntries = entries
-		# Remove next line after testing...
-		# print("[InfoBarTimers-Overlay] getEntries DEBUG: entries=%d, defEntries=%d, minEntries=%d, maxEntries=%d" % (entries, defEntries, minEntries, maxEntries))
-		return entries, defEntries, minEntries, maxEntries
+		print("[InfoBarTimers-Overlay] layoutFinish DEBUG: Screen style='%s', styles='%s', overlayWidth=%d, timersWidth=%d, timersHeight=%d, yOffset=%d, yPadding=%d" % (config.plugins.InfoBarTimers.style.value, str(styles), self.overlayWidth, self.timersWidth, self.timersHeight, yOffset, yPadding))
 
 	def refreshTimerList(self, entry=None):
 		self.refreshTimer.stop()
 		if config.plugins.InfoBarTimers.enabled.value:
-			default = overlayPositions.get(desktopHeight, [50, 140])
+			default = overlayPositions.get(DESKTOP_SIZE[1], [50, 140])
 			left, top = config.plugins.InfoBarTimers.position.value
-			if left >= desktopWidth:
+			if left >= DESKTOP_SIZE[0]:
 				left = default[0]
-			if top >= desktopHeight:
+			if top >= DESKTOP_SIZE[1]:
 				top = default[1]
 			self.instance.move(ePoint(left, top))
 			# self.instance.setZPosition(config.plugins.InfoBarTimers.zPosition.value)
@@ -758,42 +471,78 @@ class InfoBarTimersOverlay(Screen):
 			itemHeight = self.getItemHeight(self.getActiveStyle())
 			height = limit * itemHeight
 			self.instance.resize(eSize(self.overlayWidth, height + self.heightPadding))
-			self["Timers"].downstream_elements[0].downstream_elements[0].instance.resize(eSize(self.timersWidth, height))
+			self["timers"].downstream_elements[0].downstream_elements[0].instance.resize(eSize(self.timersWidth, height))
 			# Remove next line after testing...
 			# print("[InfoBarTimers-Overlay] refreshTimerList DEBUG: Screen pos=(%d, %d), size=(%d, %d) - Timers size=(%d, %d), itemHeight=%d - Entries=%d, defEntries=%d, minEntries=%d, maxEntries=%d" % (left, top, self.overlayWidth, height + self.heightPadding, self.timersWidth, height, itemHeight, limit, defEntries, minEntries, maxEntries))
-			self["Timers"].updateList(formatTimerList(timers, self["Icons"]))
+			self["timers"].updateList(formatTimerList(timers, self["icons"]))
 			if self.displayed and config.plugins.InfoBarTimers.refreshOverlay.value:
 				self.refreshTimer.startLongTimer(config.plugins.InfoBarTimers.refreshOverlay.value)
 
+	def getEntries(self):
+		entries = int(config.plugins.InfoBarTimers.entries.value)
+		maxEntries = int(self.timersHeight / self.getItemHeight(self.getActiveStyle()))
+		if entries > maxEntries:
+			config.plugins.InfoBarTimers.entries.value = str(maxEntries)
+			config.plugins.InfoBarTimers.entries.save()
+			entries = maxEntries
+		defEntries = DEF_ENTRIES
+		if defEntries > entries:
+			defEntries = entries
+		minEntries = MIN_ENTRIES
+		if minEntries > entries:
+			minEntries = entries
+		# Remove next line after testing...
+		# print("[InfoBarTimers-Overlay] getEntries DEBUG: entries=%d, defEntries=%d, minEntries=%d, maxEntries=%d" % (entries, defEntries, minEntries, maxEntries))
+		return entries, defEntries, minEntries, maxEntries
+
+	def getItemHeight(self, style):
+		if "templates" in self["timers"].downstream_elements[0].template:
+			itemHeight = self["timers"].downstream_elements[0].template["templates"].get(style, None)[0]
+		else:
+			itemHeight = self["timers"].downstream_elements[0].template.get("itemHeight", None)
+		if itemHeight is None or type(itemHeight) is not int:
+			itemHeight = DEF_ITEMHEIGHT
+			print("[InfoBarTimers] Error: No itemHeight found!  Assuming a default of %d." % itemHeight)
+		return itemHeight
+
+	def getActiveStyle(self):
+		savedStyle = config.plugins.InfoBarTimers.style.value
+		if savedStyle:
+			self["timers"].setStyle(savedStyle)
+		style = self["timers"].getStyle()
+		return style
+
+	def hookInfoBar(self, reason, instanceInfoBar):
+		if reason:
+			instanceInfoBar.connectShowHideNotifier(self.processDisplay)
+		else:
+			instanceInfoBar.disconnectShowHideNotifier(self.processDisplay)
+
 	def processDisplay(self, state):
-		if config.plugins.InfoBarTimers.enabled.value:
-			self.displayed = state
-			if state:
-				self.refreshTimerList()
-				if self["Timers"].list:
-					self.show()
-			else:
-				self.refreshTimer.stop()
-				self.hide()
+		self.displayed = state
+		if state:
+			self.refreshTimerList()
+			if self["timers"].list:
+				self.show()
+		else:
+			self.refreshTimer.stop()
+			self.hide()
 
 	def cleanUp(self):
 		self.refreshTimer.stop()
-		if self.layoutFinish in self.onLayoutFinish:
-			self.onLayoutFinish.remove(self.layoutFinish)
-		if self.refreshTimerList in self.session.nav.RecordTimer.on_state_change:
-			self.session.nav.RecordTimer.on_state_change.remove(self.refreshTimerList)
-		if self.cleanUp in self.onClose:
-			self.onClose.remove(self.cleanUp)
-		InfoBarTimersOverlay.overlay = None
+		self.onLayoutFinish.remove(self.layoutFinish)
+		self.session.nav.RecordTimer.on_state_change.remove(self.refreshTimerList)
+		self.onClose.remove(self.cleanUp)
+		InfoBarTimersOverlay.instance = None
 
 
 # Template fields are as above.
 #
 class InfoBarTimersShow(Screen, HelpableScreen):
-	skinTemplate = """
-	<screen name="InfoBarTimersShow" title="Show Timers" position="fill" flags="wfNoBorder">
-		<widget name="Icons" position="0,0" size="%d,%d" pixmaps="icons/timer_off.png,icons/timer_wait.png,icons/timer_prep.png,icons/timer_rec.png,icons/timer_zap.png,icons/timer_failed.png,icons/timer_done.png,icons/timer_autotimer.png,icons/timer_rep.png" alphatest="blend" />
-		<widget source="Timers" render="Listbox" position="center,%d" size="%d,%d">
+	skinTemplate = ["""
+	<screen name="InfoBarTimersShow" title="Show Timers" position="fill" flags="wfNoBorder" resolution="1280,720">
+		<widget name="icons" position="0,0" size="20,20" pixmaps="icons/timer_off.png,icons/timer_wait.png,icons/timer_prep.png,icons/timer_rec.png,icons/timer_zap.png,icons/timer_failed.png,icons/timer_done.png,icons/timer_autotimer.png,icons/timer_rep.png" alphatest="blend" />
+		<widget source="timers" render="Listbox" position="center,80" size="1180,520">
 			<convert type="TemplatedMultiContent">
 				{
 				"template":
@@ -821,10 +570,7 @@ class InfoBarTimersShow(Screen, HelpableScreen):
 				}
 			</convert>
 		</widget>
-	</screen>"""
-	scaleData = [
-		20, 20,
-		80, 1180, 520,
+	</screen>""",
 		10, 10, 20, 20,
 		35, 10, 20, 20,
 		65, 1, 63, 38,
@@ -843,35 +589,26 @@ class InfoBarTimersShow(Screen, HelpableScreen):
 		20, 15,
 		40
 	]
-	skin = None
 
 	def __init__(self, session):
 		Screen.__init__(self, session)
 		HelpableScreen.__init__(self)
 		self.session = session
-		minRes = 720
-		height = max(minRes, desktopHeight)
-		InfoBarTimersShow.skin = InfoBarTimersShow.skinTemplate % tuple([x * height / minRes for x in InfoBarTimersShow.scaleData])
-		# print("[InfoBarTimers] DEBUG: Height=%d\n%s" % (height, InfoBarTimersShow.skin))
-		self["Actions"] = HelpableActionMap(self, ["OkCancelActions"], {
-			"ok": (self.close, _("Exit InfoBarTimers")),
-			"cancel": (self.close, _("Exit InfoBarTimers")),
+		if not self.getTitle():
+			self.setTitle(_("InfoBar Timers"))
+		self["actions"] = HelpableActionMap(self, ["OkCancelActions"], {
+			"ok": (self.keyClose, _("Exit InfoBarTimers")),
+			"cancel": (self.keyClose, _("Exit InfoBarTimers")),
 		}, prio=0, description=_("InfoBarTimers Commands"))
-		self["Icons"] = MultiPixmap()
-		self["Icons"].hide()
-		self["Timers"] = List()
+		self["icons"] = MultiPixmap()
+		self["icons"].hide()
+		self["timers"] = List()
+		self.onLayoutFinish.append(self.layoutFinish)
 		self.refreshTimer = eTimer()
 		self.refreshTimer.callback.append(self.refreshTimerList)
-		if self.layoutFinish not in self.onLayoutFinish:
-			self.onLayoutFinish.append(self.layoutFinish)
-		if self.refreshTimerList not in self.session.nav.RecordTimer.on_state_change:
-			self.session.nav.RecordTimer.on_state_change.append(self.refreshTimerList)
-		if self.cleanUp not in self.onClose:
-			self.onClose.append(self.cleanUp)
+		self.session.nav.RecordTimer.on_state_change.append(self.refreshTimerList)
 
 	def layoutFinish(self):
-		if not self.getTitle():
-			self.setTitle(_("Show Timers"))
 		self.refreshTimerList()
 
 	def refreshTimerList(self, entry=None):
@@ -886,91 +623,310 @@ class InfoBarTimersShow(Screen, HelpableScreen):
 			disabled = config.plugins.InfoBarTimers.disabledShow.value
 		order = config.plugins.InfoBarTimers.orderShow.value
 		reverse = config.plugins.InfoBarTimers.sortShow.value
-		self["Timers"].updateList(formatTimerList(updateTimerList(self.session.nav.RecordTimer, ended=ended, waiting=waiting, disabled=disabled, order=order, reverse=reverse), self["Icons"]))
+		self["timers"].updateList(formatTimerList(updateTimerList(self.session.nav.RecordTimer, ended=ended, waiting=waiting, disabled=disabled, order=order, reverse=reverse), self["icons"]))
 		if config.plugins.InfoBarTimers.refreshShow.value:
 			self.refreshTimer.startLongTimer(config.plugins.InfoBarTimers.refreshShow.value)
 
-	def cleanUp(self):
-		if config.plugins.InfoBarTimers.refreshShow.value:
-			self.refreshTimer.stop()
-		if self.layoutFinish in self.onLayoutFinish:
-			self.onLayoutFinish.remove(self.layoutFinish)
-		if self.refreshTimerList in self.session.nav.RecordTimer.on_state_change:
-			self.session.nav.RecordTimer.on_state_change.remove(self.refreshTimerList)
-		if self.cleanUp in self.onClose:
-			self.onClose.remove(self.cleanUp)
+	def keyClose(self):
+		self.refreshTimer.stop()
+		self.session.nav.RecordTimer.on_state_change.remove(self.refreshTimerList)
+		self.close()
 
 
-def replacedInfoBarShowHide__init__(self):
-	global InfoBarShowHide__init__
-	InfoBarShowHide__init__(self)
-	if isStandardInfoBar(self) or isMoviePlayerInfoBar(self) and config.plugins.InfoBarTimers.moviePlayer.value:
-		if isStandardInfoBar(self):
-			print("[InfoBarTimers] Hooking into InfoBar notifier.")
-		if isMoviePlayerInfoBar(self):
-			print("[InfoBarTimers] Hooking into MoviePlayer InfoBar notifier.")
-		self.connectShowHideNotifier(InfoBarTimersOverlay.overlay.processDisplay)
-
-
-# The detachInfoBarShowHide__init__ code is unused because WHERE_SESSIONSTART
-# plugins never get called with reason == 1
+# If ended or waiting is None then use the config values for the number of timer entries.
+# If ended or waiting is -1 then use all available timer entries of this type.
+# If ended or waiting is 0 then don't use this type of timer entry.
+# If ended or waiting is > 0 then use up to this number of this type of timer entry.
 #
-def restoredInfoBarShowHide__init__():
-	global InfoBarShowHide__init__
-	if InfoBarShowHide__init__ is not None:
-		InfoBarShowHide.__init__ = InfoBarShowHide__init__
-		InfoBarShowHide__init__ = None
+def updateTimerList(recordTimer, ended, waiting, disabled, order, reverse):
+	timersDisabled = []
+	timersEnded = []
+	for item in reversed(recordTimer.processed_timers):
+		if item.disabled:
+			if disabled:
+				timersDisabled.append(item)
+				disabled -= 1
+		else:
+			if ended:
+				timersEnded.append(item)
+				ended -= 1
+	timersActive = []
+	timersWaiting = []
+	for item in recordTimer.timer_list:
+		if item.state == item.StateWaiting:
+			if waiting:
+				timersWaiting.append(item)
+				waiting -= 1
+		else:
+			timersActive.append(item)
+	reverse = reverse == 1
+	timers = []
+	for item in order:
+		if item == "a":
+			timersActive.sort(key=attrgetter("begin"), reverse=reverse)
+			timers.extend(timersActive)
+		elif item == "d":
+			timersDisabled.sort(key=attrgetter("begin"), reverse=reverse)
+			timers.extend(timersDisabled)
+		elif item == "e":
+			timersEnded.sort(key=attrgetter("begin"), reverse=reverse)
+			timers.extend(timersEnded)
+		elif item == "w":
+			timersWaiting.sort(key=attrgetter("begin"), reverse=reverse)
+			timers.extend(timersWaiting)
+	return timers
+
+
+def formatTimerList(timers, icons):
+	def formatDuration(sign, value):
+		if value < 60:
+			format = ngettext("%s%d Sec", "%s%d Secs", value) % (sign, value)
+		else:
+			format = int(value // 60)
+			format = ngettext("%s%d Min", "%s%d Mins", format) % (sign, format)
+		return format
+
+	def formatTime(value):
+		if config.plugins.InfoBarTimers.format.value == 1:
+			format = None if value < 0 else "%d:%02d:%02d" % (value / 3600, value / 60 % 60, value % 60)
+		elif config.plugins.InfoBarTimers.format.value == 2:
+			format = None if value < 0 else "%d:%02d" % (value / 60, value % 60)
+		elif config.plugins.InfoBarTimers.format.value == 3:
+			format = None if value < 0 else "%d:%02d" % (value / 3600, value / 60 % 60)
+		else:
+			format = "%d Secs" % value if value < 60 else "%d Mins" % int(value / 60)
+		return format
+
+	snrLabels = ["", _("Q"), _("Q"), _("SNR")]
+	powerLabels = ["", _("S"), _("P"), _("AGC")]
+	labelSeparators = ["", " ", ":", "=", "-", ": ", " = ", " - "]
+	signal = config.plugins.InfoBarTimers.signalIndex.value
+	if signal:
+		separator = labelSeparators[config.plugins.InfoBarTimers.separatorIndex.value]
+	else:
+		separator = ""
+	list = []
+	for timer in timers:
+		if timer.state == timer.StateWaiting:
+			state = icons.pixmaps[ICON_WAIT]
+			stateText = _("Waiting")
+		elif timer.state == timer.StatePrepared:
+			state = icons.pixmaps[ICON_PREP]
+			stateText = _("Preparing")
+		elif timer.state == timer.StateRunning:
+			state = icons.pixmaps[ICON_REC]
+			stateText = _("Recording")
+		elif timer.state == timer.StateFailed:
+			state = icons.pixmaps[ICON_FAIL]
+			stateText = _("Failed")
+		elif timer.state == timer.StateEnded:
+			state = icons.pixmaps[ICON_END]
+			stateText = _("Ended")
+		else:
+			state = None
+			stateText = _("Unknown")
+		if timer.disabled:
+			state = icons.pixmaps[ICON_OFF]
+			stateText = _("Disabled")
+		if hasattr(timer, "isAutoTimer") and timer.isAutoTimer:
+			type = icons.pixmaps[ICON_AUTO]
+			typeText = _("AutoTimer")
+		elif hasattr(timer, "ice_timer_id") and timer.ice_timer_id:
+			type = LoadPixmap(resolveFilename(SCOPE_CURRENT_SKIN, "icons/timer_icetv.png"))
+			if not type:
+				type = LoadPixmap(resolveFilename(SCOPE_CURRENT_PLUGIN, "SystemPlugins/IceTV/icons/timer_icetv.png"))
+			typeText = _("IceTV")
+		elif timer.repeated:
+			type = icons.pixmaps[ICON_REP]
+			typeText = _("Repeating")
+		else:
+			type = None
+			typeText = _("Timer")
+		feinfo = timer.record_service and timer.record_service.frontendInfo()
+		data = feinfo and feinfo.getAll(False)
+		if data:
+			tuner = data.get("tuner_number", -1)
+			tuner = chr(int(tuner) + ord("A")) if tuner is not None and tuner > -1 else None
+			tunerType = data.get("tuner_type", None)
+			ber = data.get("tuner_bit_error_rate", None)
+			snrValue = data.get("tuner_signal_quality", None)
+			if snrValue is not None:
+				snrValue = int(snrValue * 100 / 65535)
+				snr = "%s%s%d%%" % (snrLabels[signal], separator, snrValue)
+			else:
+				snrValue = -1  # Use an out-out-of range value to hide the bar graph.
+				snr = None
+			snr_dB = data.get("tuner_signal_quality_db", None)
+			if snr_dB is not None:
+				snr_dB = "%.1f" % (snr_dB / 100.0)
+			powerValue = data.get("tuner_signal_power", None)
+			if powerValue is not None:
+				powerValue = int(powerValue * 100 / 65535)
+				power = "%s%s%d%%" % (powerLabels[signal], separator, powerValue)
+			else:
+				powerValue = -1  # Use an out-out-of range value to hide the bar graph.
+				power = None
+		else:
+			tuner = None
+			tunerType = None
+			ber = None
+			snrValue = -1  # Use an out-out-of range value to hide the bar graph.
+			snr = None
+			snr_dB = None
+			powerValue = -1  # Use an out-out-of range value to hide the bar graph.
+			power = None
+		picon = getPiconName(timer.service_ref.ref.toString())
+		if picon == "":
+			servicePicon = None
+		else:
+			servicePicon = LoadPixmap(picon)
+		serviceName = timer.service_ref.getServiceName() if timer.service_ref else None
+		timerName = timer.name if timer.name else None
+		prepare = formatDuration("", timer.prepare_time)
+		if timer.begin and timer.end:
+			dateFmt = config.usage.date.dayshort.value  # Set the display date format
+			timeFmt = config.usage.time.short.value  # Set the display time format
+			begin = strftime("%s %s" % (dateFmt, timeFmt), localtime(timer.begin))
+			beginDate = strftime(dateFmt, localtime(timer.begin))
+			beginTime = strftime(timeFmt, localtime(timer.begin))
+			end = strftime("%s %s" % (dateFmt, timeFmt), localtime(timer.end))
+			endDate = strftime(dateFmt, localtime(timer.end))
+			endTime = strftime(timeFmt, localtime(timer.end))
+			beginEnd = "%s - %s" % (begin, strftime(timeFmt, localtime(timer.end)))
+			durationValue = timer.end - timer.begin
+			duration = formatTime(durationValue)
+			durationWord = formatDuration("", durationValue)
+			durationHrs = None if durationValue < 0 else "%d:%02d" % (durationValue // 3600, durationValue // 60 % 60)
+			durationMins = None if durationValue < 0 else "%d:%02d" % (durationValue // 60, durationValue % 60)
+			durationSecs = None if durationValue < 0 else "%d:%02d:%02d" % (durationValue // 3600, durationValue // 60 % 60, durationValue % 60)
+			now = time()
+			if timer.begin <= now <= timer.end:
+				if config.usage.elapsed_time_positive_osd.value:
+					signElapsed = "+"
+					signRemaining = "-"
+				else:
+					signElapsed = "-"
+					signRemaining = "+"
+				elapsedValue = now - timer.begin
+				elapsed = formatTime(elapsedValue)
+				elapsedWord = formatDuration(signElapsed, elapsedValue)
+				elapsedHrs = None if elapsedValue < 0 else "%s%d:%02d" % (signElapsed, elapsedValue // 3600, elapsedValue // 60 % 60)
+				elapsedMins = None if elapsedValue < 0 else "%s%d:%02d" % (signElapsed, elapsedValue // 60, elapsedValue % 60)
+				elapsedSecs = None if elapsedValue < 0 else "%s%d:%02d:%02d" % (signElapsed, elapsedValue // 3600, elapsedValue // 60 % 60, elapsedValue % 60)
+				remainingValue = timer.end - now
+				remaining = formatTime(remainingValue)
+				remainingWord = formatDuration(signRemaining, remainingValue)
+				remainingHrs = None if remainingValue < 0 else "%s%d:%02d" % (signRemaining, remainingValue // 3600, remainingValue // 60 % 60)
+				remainingMins = None if remainingValue < 0 else "%s%d:%02d" % (signRemaining, remainingValue // 60, remainingValue % 60)
+				remainingSecs = None if remainingValue < 0 else "%s%d:%02d:%02d" % (signRemaining, remainingValue // 3600, remainingValue // 60 % 60, remainingValue % 60)
+				format = config.usage.swap_time_remaining_on_osd.value
+				if format == "0":
+					elapsedRemaining = formatDuration(signRemaining, remainingValue)
+				elif format == "1":
+					elapsedRemaining = formatDuration(signElapsed, elapsedValue)
+				elif format == "2":
+					elapsedRemaining = formatDuration(signElapsed, elapsedValue)
+					elapsedRemaining = "%s%d %s%d Mins" % (signElapsed, int(elapsedValue // 60), signRemaining, int(remainingValue // 60))
+				elif format == "3":
+					elapsedRemaining = "%s%d %s%d Mins" % (signRemaining, int(remainingValue // 60), signElapsed, int(elapsedValue // 60))
+				else:
+					print("[InfoBarTimers] Error: config.usage.swap_time_remaining_on_osd value is not within expected range!! (Value=%s)" % config.usage.swap_time_remaining_on_osd.value)
+					elapsedRemaining = None
+				progressValue = int(elapsedValue / durationValue * 100.0)
+				if progressValue < 0:
+					progressValue = 0
+				elif progressValue > 100:
+					progressValue = 100
+				progress = "%d%%" % progressValue
+			else:
+				elapsed = None
+				elapsedWord = None
+				elapsedHrs = None
+				elapsedMins = None
+				elapsedSecs = None
+				remaining = None
+				remainingWord = None
+				remainingHrs = None
+				remainingMins = None
+				remainingSecs = None
+				elapsedRemaining = None
+				progressValue = -1  # Use an out-out-of range value to hide the bar graph.
+				progress = None
+		else:
+			begin = None
+			beginDate = None
+			beginTime = None
+			end = None
+			endDate = None
+			endTime = None
+			beginEnd = None
+			duration = None
+			durationWord = None
+			durationHrs = None
+			durationMins = None
+			durationSecs = None
+			elapsed = None
+			elapsedWord = None
+			elapsedHrs = None
+			elapsedMins = None
+			elapsedSecs = None
+			remaining = None
+			remainingWord = None
+			remainingHrs = None
+			remainingMins = None
+			remainingSecs = None
+			elapsedRemaining = None
+			progressValue = -1  # Use an out-out-of range value to hide the bar graph
+			progress = None
+		tags = "'%s'" % "', '".join(timer.tags) if timer.tags else None
+		description = timer.description if timer.description else None
+		dirName = timer.dirname if timer.dirname else None  # Custom directory
+		list.append(
+			(state, stateText, type, typeText, tuner, tunerType, ber, snrValue, snr, snr_dB, powerValue, power,
+			servicePicon, serviceName, timerName, prepare, begin, beginDate, beginTime, end, endDate, endTime, beginEnd,
+			duration, durationWord, durationHrs, durationMins, durationSecs, elapsed, elapsedWord, elapsedHrs, elapsedMins, elapsedSecs,
+			remaining, remainingWord, remainingHrs, remainingMins, remainingSecs, elapsedRemaining, progressValue, progress,
+			tags, description, dirName)
+		)
+	return list
 
 
 def setup(session, **kwargs):
-	# try:
 	session.open(InfoBarTimersSetup)
-	# except Exception as err:
-	# 	print("[InfoBarTimers] Setup exception '%s'." % str(err))
 
 
-# Start setup from extension menu. Needs to be a different function so
-# that addition/removal of plugins works in InfoBarTimersSetup, because
-# equality in PluginDescriptors is tested ONLY on their fnc value.
+def overlay(reason, session, **kwargs):
+	if reason == 0:
+		session.instantiateDialog(InfoBarTimersOverlay)
+
+
+def info(reason, session, **kwargs):
+	typeInfoBar = kwargs["typeInfoBar"]
+	if config.plugins.InfoBarTimers.enabled.value and typeInfoBar == "InfoBar":
+		InfoBarTimersOverlay.instance.hookInfoBar(reason, kwargs["instance"])
+	elif config.plugins.InfoBarTimers.moviePlayer.value and typeInfoBar == "MoviePlayer":
+		InfoBarTimersOverlay.instance.hookInfoBar(reason, kwargs["instance"])
+
+
+def show(session, **kwargs):
+	session.open(InfoBarTimersShow)
+
+
+# Start setup from extension menu. Needs to be a different function so that addition/removal of plugins
+# works in InfoBarTimersSetup, because equality in PluginDescriptors is tested ONLY on their fnc value.
 #
-def extSetup(session, **kwargs):
+def extension(session, **kwargs):
 	setup(session, **kwargs)
 
 
-def extShow(session, **kwargs):
-	# try:
-	session.open(InfoBarTimersShow)
-	# except Exception as err:
-	# 	print("[InfoBarTimers] Show exception '%s'." % str(err))
-
-
-def main(reason, session, **kwargs):
-	global InfoBarShowHide__init__
-	if reason == 0:  # Enigma2 starting, or plugin being enabled.
-		print("[InfoBarTimers] InfoBarTimers version %s started." % VERSION)
-		# try:
-		session.instantiateDialog(InfoBarTimersOverlay)
-		# except Exception as err:
-		# 	print("[InfoBarTimers] Main exception '%s'." % str(err))
-		if InfoBarShowHide__init__ is None:
-			InfoBarShowHide__init__ = InfoBarShowHide.__init__
-			InfoBarShowHide.__init__ = replacedInfoBarShowHide__init__
-	# No "elif reason == 1" because WHERE_SESSIONSTART plugins never get
-	# called with reason == 1.
-
-
-pluginMain = PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=main, needsRestart=False)
-pluginShow = PluginDescriptor(name=SHOW, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SHOW, icon="plugin.png", fnc=extShow, needsRestart=False)
-pluginSetup = PluginDescriptor(name=SETUP, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SETUP, icon="plugin.png", fnc=extSetup, needsRestart=False)
-pluginMenu = PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_PLUGINMENU], description="%s %s %s" % (NAME, _("version"), VERSION), icon="plugin.png", fnc=setup, needsRestart=False)
-
-
 def Plugins(**kwargs):
-	plugin = []
-	plugin.append(pluginMain)
+	plugin = [
+		PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_PLUGINMENU], description="%s %s %s" % (NAME, _("version"), VERSION), icon="plugin.png", fnc=setup, needsRestart=False),
+		PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=overlay, needsRestart=False),
+		PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_INFOBARLOADED], fnc=info, needsRestart=False)
+	]
 	if config.plugins.InfoBarTimers.extensionsShow.value:
-		plugin.append(pluginShow)
+		plugin.append(PluginDescriptor(name=SHOW, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SHOW, icon="plugin.png", fnc=show, needsRestart=False))
 	if config.plugins.InfoBarTimers.extensionsSetup.value:
-		plugin.append(pluginSetup)
-	plugin.append(pluginMenu)
+		plugin.append(PluginDescriptor(name=SETUP, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SETUP, icon="plugin.png", fnc=extension, needsRestart=False))
 	return plugin
