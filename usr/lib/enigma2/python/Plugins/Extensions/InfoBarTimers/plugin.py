@@ -389,6 +389,7 @@ class InfoBarTimersOverlay(Screen):
 
 	def __init__(self, session):
 		Screen.__init__(self, session)
+		InfoBarTimersOverlay.instance = self
 		if not self.getTitle():
 			self.setTitle(_("InfoBar Timers"))
 		self["icons"] = MultiPixmap()
@@ -404,7 +405,6 @@ class InfoBarTimersOverlay(Screen):
 		self.refreshTimer.callback.append(self.refreshTimerList)
 		self.session.nav.RecordTimer.on_state_change.append(self.refreshTimerList)
 		self.onClose.append(self.cleanUp)
-		InfoBarTimersOverlay.instance = self
 
 	def layoutFinish(self):
 		self.overlayWidth = self.instance.size().width()
