@@ -919,14 +919,18 @@ def extension(session, **kwargs):
 	setup(session, **kwargs)
 
 
+pluginSetup = PluginDescriptor(name=SETUP, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SETUP, icon="plugin.png", fnc=extension, needsRestart=False)
+pluginShow = PluginDescriptor(name=SHOW, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SHOW, icon="plugin.png", fnc=show, needsRestart=False)
+
+
 def Plugins(**kwargs):
 	plugin = [
 		PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_PLUGINMENU], description="%s %s %s" % (NAME, _("version"), VERSION), icon="plugin.png", fnc=setup, needsRestart=False),
 		PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=overlay, needsRestart=False),
 		PluginDescriptor(name=NAME, where=[PluginDescriptor.WHERE_INFOBARLOADED], fnc=info, needsRestart=False)
 	]
-	if config.plugins.InfoBarTimers.extensionsShow.value:
-		plugin.append(PluginDescriptor(name=SHOW, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SHOW, icon="plugin.png", fnc=show, needsRestart=False))
 	if config.plugins.InfoBarTimers.extensionsSetup.value:
-		plugin.append(PluginDescriptor(name=SETUP, where=[PluginDescriptor.WHERE_EXTENSIONSMENU], description=SETUP, icon="plugin.png", fnc=extension, needsRestart=False))
+		plugin.append(pluginSetup)
+	if config.plugins.InfoBarTimers.extensionsShow.value:
+		plugin.append(pluginShow)
 	return plugin
